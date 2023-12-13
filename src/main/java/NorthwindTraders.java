@@ -1,3 +1,6 @@
+import org.apache.commons.dbcp2.BasicDataSource;
+
+
 import java.sql.*;
 import java.util.Scanner;
 
@@ -6,13 +9,19 @@ public class NorthwindTraders {
     static String url = "jdbc:mysql://localhost:3306/northwind";
     static String user = "root";
     static String password = "Harrypotter_15";
-    static ResultSet rs = null;
-    //        Statement stmt = null;
 
-    static Connection conn = null;
-    public static void main(String[] args) throws ClassNotFoundException {
 
-        Class.forName("com.mysql.cj.jdbc.Driver");
+    static BasicDataSource dataSource;
+    public static void main(String[] args){
+
+        dataSource = new BasicDataSource();
+
+        dataSource.setUrl(url);
+        dataSource.setUsername(user);
+        dataSource.setPassword(password);
+
+
+
 
         System.out.println("What do you want to do?\n" +
                 " 1) Display all products\n" +
@@ -28,6 +37,9 @@ public class NorthwindTraders {
             case "2":
                 customers();
                 break;
+            case "3":
+                categories();
+                break;
             case "0":
                 System.exit(0);
             default:
@@ -35,18 +47,10 @@ public class NorthwindTraders {
         }
     }
     public static void products() {
-        PreparedStatement preparedStatement = null;
-        try {
-            // Establishing connection
-            conn = DriverManager.getConnection(url, user, password);
-            //stmt = conn.createStatement();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM Products");
+             ResultSet rs = preparedStatement.executeQuery()){
 
-            preparedStatement = conn.prepareStatement("SELECT * FROM Products");
-
-            // Executing query
-            rs = preparedStatement.executeQuery();
-
-            // Processing the result set
             while (rs.next()) {
                 System.out.println("\nID: " + rs.getInt("ProductID"));
                 System.out.println("Name: " + rs.getString("ProductName"));
@@ -55,49 +59,15 @@ public class NorthwindTraders {
                 System.out.println("-------------------------------------");
 
             }
-
-            // Closing resources
-
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            // close the resources
-            if (rs == null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (preparedStatement != null) {
-                try {
-                    preparedStatement.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
     public static void customers(){
-        PreparedStatement preparedStatement = null;
-        try {
-            // Establishing connection
-            conn = DriverManager.getConnection(url, user, password);
-            //stmt = conn.createStatement();
-
-            preparedStatement = conn.prepareStatement("SELECT * FROM Customers ORDER BY Country");
-//                    ContactName, CompanyName, City, Country, Phone
-            // Executing query
-            rs = preparedStatement.executeQuery();
-
-            // Processing the result set
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM Customers ORDER BY Country");
+             ResultSet rs = preparedStatement.executeQuery()
+        ){
             while (rs.next()) {
                 System.out.println("\nContact Name: " + rs.getString("ContactName"));
                 System.out.println("Company Name: " + rs.getString("CompanyName"));
@@ -107,34 +77,47 @@ public class NorthwindTraders {
                 System.out.println("-------------------------------------");
 
             }
-
-            // Closing resources
-
         } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            // close the resources
-            if (rs == null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
+        }
+    }
+
+    public static void categories(){
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement preparedStatement = conn.prepareStatement("SELECT * FROM Categories ORDER BY CategoryID");
+             ResultSet rs = preparedStatement.executeQuery()
+        ){
+            while (rs.next()) {
+                System.out.println("\nCategory ID: " + rs.getInt("CategoryID"));
+                System.out.println("Category Name: " + rs.getString("CategoryName"));
+                System.out.println("-------------------------------------");
             }
-            if (preparedStatement != null) {
-                try {
-                    preparedStatement.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
+
+            Scanner scanner = new Scanner(System.in);
+            System.out.println("Enter a category ID to display products: ");
+            int id = scanner.nextInt();
+
+            try(Connection con = dataSource.getConnection();
+                PreparedStatement statement = con.prepareStatement("SELECT * FROM Products WHERE CategoryID= ?" )
+            ){
+
+                statement.setInt(1,id);
+
+                try(ResultSet r = statement.executeQuery()) {
+                    while (r.next()) {
+                        System.out.println("\nID: " + r.getInt("ProductID"));
+                        System.out.println("Name: " + r.getString("ProductName"));
+                        System.out.println("Price: " + r.getDouble("UnitPrice"));
+                        System.out.println("Stock: " + r.getInt("UnitsInStock"));
+                        System.out.println("-------------------------------------");
+
+                    }
                 }
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }
