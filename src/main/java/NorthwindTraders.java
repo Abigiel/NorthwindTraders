@@ -8,7 +8,7 @@ import java.util.Scanner;
 public class NorthwindTraders {
     static String url = "jdbc:mysql://localhost:3306/northwind";
     static String user = "root";
-    static String password = "Harrypotter_15";
+    static String password = "password";
 
 
     static BasicDataSource dataSource;
